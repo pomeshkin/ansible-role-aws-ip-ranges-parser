@@ -1,0 +1,14 @@
+---
+#  Gather and print only IPv4 prefixes
+
+- hosts: 'localhost'
+  gather_facts: false
+  roles:
+    - role: 'ansible-role-aws-ip-ranges-parser'
+      vars:
+        aws_ip_ranges_parser_ipv4_enabled: false
+        aws_ip_ranges_parser_ipv6_enabled: true
+        aws_ip_ranges_parser_print_results: true
+        aws_ip_ranges_parser_regions: 'all'
+        aws_ip_ranges_parser_services: 'all'
+        aws_ip_ranges_parser_network_border_groups: 'all'

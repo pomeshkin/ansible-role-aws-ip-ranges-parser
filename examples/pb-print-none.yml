@@ -1,0 +1,11 @@
+---
+#  Gather everything, print nothing
+
+- hosts: 'localhost'
+  gather_facts: false
+  roles:
+    - role: 'ansible-role-aws-ip-ranges-parser'
+      vars:
+        aws_ip_ranges_parser_ipv4_enabled: true
+        aws_ip_ranges_parser_ipv6_enabled: true
+        aws_ip_ranges_parser_print_results: false

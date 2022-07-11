@@ -1,0 +1,10 @@
+---
+
+aws_ip_ranges_parser_ipv4_enabled: true
+aws_ip_ranges_parser_ipv6_enabled: false
+
+aws_ip_ranges_parser_print_results: true
+
+aws_ip_ranges_parser_regions: 'all'  # comma-separated
+aws_ip_ranges_parser_services: ''  # comma-separated
+aws_ip_ranges_parser_network_border_groups: ''  # comma-separated

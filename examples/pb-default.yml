@@ -1,0 +1,7 @@
+---
+#  Gather and print default values (IPv4 prefixes for all regions)
+
+- hosts: 'localhost'
+  gather_facts: false
+  roles:
+    - role: 'ansible-role-aws-ip-ranges-parser'

@@ -1,0 +1,19 @@
+---
+
+aws_ip_ranges_parser_url: 'https://ip-ranges.amazonaws.com/ip-ranges.json'
+
+aws_ip_ranges_parser_ipv4_result_all: []
+aws_ip_ranges_parser_ipv4_result_regions: []
+aws_ip_ranges_parser_ipv4_result_services: []
+aws_ip_ranges_parser_ipv4_result_network_border_groups: []
+aws_ip_ranges_parser_ipv4_result_by_region: {}
+aws_ip_ranges_parser_ipv4_result_by_service: {}
+aws_ip_ranges_parser_ipv4_result_by_network_bg: {}
+
+aws_ip_ranges_parser_ipv6_result_all: []
+aws_ip_ranges_parser_ipv6_result_regions: []
+aws_ip_ranges_parser_ipv6_result_services: []
+aws_ip_ranges_parser_ipv6_result_network_border_groups: []
+aws_ip_ranges_parser_ipv6_result_by_region: {}
+aws_ip_ranges_parser_ipv6_result_by_service: {}
+aws_ip_ranges_parser_ipv6_result_by_network_bg: {}

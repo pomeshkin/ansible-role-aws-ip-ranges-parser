@@ -1,0 +1,262 @@
+---
+
+- name: 'Download RAW content'
+  ansible.builtin.uri:
+    url: '{{ aws_ip_ranges_parser_url }}'
+    method: 'GET'
+    return_content: 'yes'
+  register: 'aws_ip_ranges_parser_ranges_raw'
+  until: 'aws_ip_ranges_parser_ranges_raw.status == 200'
+  retries: 2
+  delay: 5
+
+- name: 'Convert RAW content to json'
+  ansible.builtin.set_fact:
+    aws_ip_ranges_parser_ranges_raw_json: '{{ aws_ip_ranges_parser_ranges_raw.content | from_json }}'
+
+
+- name: 'Block: parsing IPv4 prefixes'
+  block:
+
+    - name: 'Setup output IPv4 variables'
+      ansible.builtin.set_fact:
+        aws_ip_ranges_parser_ipv4_result_regions: '{{ aws_ip_ranges_parser_ranges_raw_json |
+                                                      community.general.json_query("prefixes[*].region") | unique | sort
+                                                   }}'
+        aws_ip_ranges_parser_ipv4_result_services: '{{ aws_ip_ranges_parser_ranges_raw_json |
+                                                       community.general.json_query("prefixes[*].service") | unique | sort
+                                                    }}'
+        aws_ip_ranges_parser_ipv4_result_network_border_groups: '{{ aws_ip_ranges_parser_ranges_raw_json |
+                                                                    community.general.json_query("prefixes[*].network_border_group") | unique | sort
+                                                                 }}'
+        aws_ip_ranges_parser_ipv4_result_all: '{{ aws_ip_ranges_parser_ranges_raw_json |
+                                                  community.general.json_query("prefixes[*].ip_prefix")
+                                               }}'
+
+    - name: 'Setup IPv4 prefixes by region'
+      ansible.builtin.set_fact:
+        aws_ip_ranges_parser_ipv4_result_by_region: '{{ aws_ip_ranges_parser_ipv4_result_by_region |
+                                                        combine(
+                                                          { item:
+                                                              aws_ip_ranges_parser_ranges_raw_json |
+                                                              community.general.json_query(aws_ip_ranges_parser_query_by_region)
+                                                          }
+                                                        )
+                                                     }}'
+      loop: '{{ aws_ip_ranges_parser_ipv4_result_regions
+                if aws_ip_ranges_parser_regions == "all"
+                else aws_ip_ranges_parser_regions | split(",")
+             }}'
+      vars:
+        aws_ip_ranges_parser_query_by_region: "prefixes[?region=='{{ item }}'].ip_prefix"
+      when: aws_ip_ranges_parser_regions | length > 0
+
+    - name: 'Setup IPv4 prefixes by service'
+      ansible.builtin.set_fact:
+        aws_ip_ranges_parser_ipv4_result_by_service: '{{ aws_ip_ranges_parser_ipv4_result_by_service |
+                                                         combine(
+                                                           { item:
+                                                               aws_ip_ranges_parser_ranges_raw_json |
+                                                               community.general.json_query(aws_ip_ranges_parser_query_by_service)
+                                                           }
+                                                         )
+                                                      }}'
+      loop: '{{ aws_ip_ranges_parser_ipv4_result_services
+                if aws_ip_ranges_parser_services == "all"
+                else aws_ip_ranges_parser_services | split(",")
+             }}'
+      vars:
+        aws_ip_ranges_parser_query_by_service: "prefixes[?service=='{{ item }}'].ip_prefix"
+      when: aws_ip_ranges_parser_services | length > 0
+
+    - name: 'Setup IPv4 prefixes by network border group'
+      ansible.builtin.set_fact:
+        aws_ip_ranges_parser_ipv4_result_by_network_bg: '{{ aws_ip_ranges_parser_ipv4_result_by_network_bg |
+                                                            combine(
+                                                              { item:
+                                                                  aws_ip_ranges_parser_ranges_raw_json |
+                                                                  community.general.json_query(aws_ip_ranges_parser_query_by_network_bg)
+                                                              }
+                                                            )
+                                                         }}'
+      loop: '{{ aws_ip_ranges_parser_ipv4_result_network_border_groups
+                if aws_ip_ranges_parser_network_border_groups == "all"
+                else aws_ip_ranges_parser_network_border_groups | split(",")
+             }}'
+      vars:
+        aws_ip_ranges_parser_query_by_network_bg: "prefixes[?network_border_group=='{{ item }}'].ip_prefix"
+      when: aws_ip_ranges_parser_network_border_groups | length > 0
+
+  when: aws_ip_ranges_parser_ipv4_enabled | bool
+
+
+- name: 'Block: parsing IPv6 prefixes'
+  block:
+
+    - name: 'Setup output IPv6 variables'
+      ansible.builtin.set_fact:
+        aws_ip_ranges_parser_ipv6_result_regions: '{{ aws_ip_ranges_parser_ranges_raw_json |
+                                                      community.general.json_query("ipv6_prefixes[*].region") | unique | sort
+                                                   }}'
+        aws_ip_ranges_parser_ipv6_result_services: '{{ aws_ip_ranges_parser_ranges_raw_json |
+                                                       community.general.json_query("ipv6_prefixes[*].service") | unique | sort
+                                                    }}'
+        aws_ip_ranges_parser_ipv6_result_network_border_groups: '{{ aws_ip_ranges_parser_ranges_raw_json |
+                                                                    community.general.json_query("ipv6_prefixes[*].network_border_group") | unique | sort
+                                                                 }}'
+        aws_ip_ranges_parser_ipv6_result_all: '{{ aws_ip_ranges_parser_ranges_raw_json |
+                                                  community.general.json_query("ipv6_prefixes[*].ipv6_prefix")
+                                               }}'
+
+    - name: 'Setup IPv6 prefixes by region'
+      ansible.builtin.set_fact:
+        aws_ip_ranges_parser_ipv6_result_by_region: '{{ aws_ip_ranges_parser_ipv6_result_by_region |
+                                                        combine(
+                                                          { item:
+                                                              aws_ip_ranges_parser_ranges_raw_json |
+                                                              community.general.json_query(aws_ip_ranges_parser_query_by_region)
+                                                          }
+                                                        )
+                                                     }}'
+      loop: '{{ aws_ip_ranges_parser_ipv6_result_regions
+                if aws_ip_ranges_parser_regions == "all"
+                else aws_ip_ranges_parser_regions | split(",")
+             }}'
+      vars:
+        aws_ip_ranges_parser_query_by_region: "ipv6_prefixes[?region=='{{ item }}'].ipv6_prefix"
+      when: aws_ip_ranges_parser_regions | length > 0
+
+    - name: 'Setup IPv6 prefixes by service'
+      ansible.builtin.set_fact:
+        aws_ip_ranges_parser_ipv6_result_by_service: '{{ aws_ip_ranges_parser_ipv6_result_by_service |
+                                                         combine(
+                                                           { item:
+                                                               aws_ip_ranges_parser_ranges_raw_json |
+                                                               community.general.json_query(aws_ip_ranges_parser_query_by_service)
+                                                           }
+                                                         )
+                                                      }}'
+      loop: '{{ aws_ip_ranges_parser_ipv6_result_services
+                if aws_ip_ranges_parser_services == "all"
+                else aws_ip_ranges_parser_services | split(",")
+             }}'
+      vars:
+        aws_ip_ranges_parser_query_by_service: "ipv6_prefixes[?service=='{{ item }}'].ipv6_prefix"
+      when: aws_ip_ranges_parser_services | length > 0
+
+    - name: 'Setup IPv6 prefixes by network border group'
+      ansible.builtin.set_fact:
+        aws_ip_ranges_parser_ipv6_result_by_network_bg: '{{ aws_ip_ranges_parser_ipv6_result_by_network_bg |
+                                                            combine(
+                                                              { item:
+                                                                  aws_ip_ranges_parser_ranges_raw_json |
+                                                                  community.general.json_query(aws_ip_ranges_parser_query_by_network_bg)
+                                                              }
+                                                            )
+                                                         }}'
+      loop: '{{ aws_ip_ranges_parser_ipv6_result_network_border_groups
+                if aws_ip_ranges_parser_network_border_groups == "all"
+                else aws_ip_ranges_parser_network_border_groups | split(",")
+             }}'
+      vars:
+        aws_ip_ranges_parser_query_by_network_bg: "ipv6_prefixes[?network_border_group=='{{ item }}'].ipv6_prefix"
+      when: aws_ip_ranges_parser_network_border_groups | length > 0
+
+  when: aws_ip_ranges_parser_ipv6_enabled | bool
+
+
+- name: 'Setup output variable aliases'
+  ansible.builtin.set_fact:
+    aws_ipv4_prefixes_all: '{{ aws_ip_ranges_parser_ipv4_result_all }}'
+    aws_ipv4_regions_all: '{{ aws_ip_ranges_parser_ipv4_result_regions }}'
+    aws_ipv4_services_all: '{{ aws_ip_ranges_parser_ipv4_result_services }}'
+    aws_ipv4_network_border_groups_all: '{{ aws_ip_ranges_parser_ipv4_result_network_border_groups }}'
+    aws_ipv4_prefixes_by_region: '{{ aws_ip_ranges_parser_ipv4_result_by_region }}'
+    aws_ipv4_prefixes_by_service: '{{ aws_ip_ranges_parser_ipv4_result_by_service }}'
+    aws_ipv4_prefixes_by_network_border_group: '{{ aws_ip_ranges_parser_ipv4_result_by_network_bg }}'
+    #
+    aws_ipv6_prefixes_all: '{{ aws_ip_ranges_parser_ipv6_result_all }}'
+    aws_ipv6_regions_all: '{{ aws_ip_ranges_parser_ipv6_result_regions }}'
+    aws_ipv6_services_all: '{{ aws_ip_ranges_parser_ipv6_result_services }}'
+    aws_ipv6_network_border_groups_all: '{{ aws_ip_ranges_parser_ipv6_result_network_border_groups }}'
+    aws_ipv6_prefixes_by_region: '{{ aws_ip_ranges_parser_ipv6_result_by_region }}'
+    aws_ipv6_prefixes_by_service: '{{ aws_ip_ranges_parser_ipv6_result_by_service }}'
+    aws_ipv6_prefixes_by_network_border_group: '{{ aws_ip_ranges_parser_ipv6_result_by_network_bg }}'
+
+
+- name: 'Block: print IPv6 results'
+  block:
+
+    - name: 'Result: IPv6 ranges by network border group'
+      ansible.builtin.debug:
+        msg: '{{ aws_ip_ranges_parser_ipv6_result_by_network_bg[item] | default([]) }}'
+      loop: '{{ aws_ip_ranges_parser_ipv6_result_network_border_groups
+                if aws_ip_ranges_parser_network_border_groups == "all"
+                else aws_ip_ranges_parser_network_border_groups | split(",")
+             }}'
+      loop_control:
+        label: 'IPv6 prefixes for network border group "{{ item }}"'
+      when: aws_ip_ranges_parser_network_border_groups | length > 0
+
+    - name: 'Result: IPv6 ranges by service'
+      ansible.builtin.debug:
+        msg: '{{ aws_ip_ranges_parser_ipv6_result_by_service[item] | default([]) }}'
+      loop: '{{ aws_ip_ranges_parser_ipv6_result_services
+                if aws_ip_ranges_parser_services == "all"
+                else aws_ip_ranges_parser_services | split(",")
+             }}'
+      loop_control:
+        label: 'IPv6 prefixes for service "{{ item }}"'
+      when: aws_ip_ranges_parser_services | length > 0
+
+    - name: 'Result: IPv6 ranges by region'
+      ansible.builtin.debug:
+        msg: '{{ aws_ip_ranges_parser_ipv6_result_by_region[item] | default([]) }}'
+      loop: '{{ aws_ip_ranges_parser_ipv6_result_regions
+                if aws_ip_ranges_parser_regions == "all"
+                else aws_ip_ranges_parser_regions | split(",")
+             }}'
+      loop_control:
+        label: 'IPv6 prefixes for region "{{ item }}"'
+      when: aws_ip_ranges_parser_regions | length > 0
+
+  when: aws_ip_ranges_parser_ipv6_enabled | bool and aws_ip_ranges_parser_print_results | bool
+
+
+- name: 'Block: print IPv4 results'
+  block:
+
+    - name: 'Result: IPv4 ranges by network border group'
+      ansible.builtin.debug:
+        msg: '{{ aws_ip_ranges_parser_ipv4_result_by_network_bg[item] | default([]) }}'
+      loop: '{{ aws_ip_ranges_parser_ipv4_result_network_border_groups
+                if aws_ip_ranges_parser_network_border_groups == "all"
+                else aws_ip_ranges_parser_network_border_groups | split(",")
+             }}'
+      loop_control:
+        label: 'IPv4 prefixes for network border group "{{ item }}"'
+      when: aws_ip_ranges_parser_network_border_groups | length > 0
+
+    - name: 'Result: IPv4 ranges by service'
+      ansible.builtin.debug:
+        msg: '{{ aws_ip_ranges_parser_ipv4_result_by_service[item] | default([]) }}'
+      loop: '{{ aws_ip_ranges_parser_ipv4_result_services
+                if aws_ip_ranges_parser_services == "all"
+                else aws_ip_ranges_parser_services | split(",")
+             }}'
+      loop_control:
+        label: 'IPv4 prefixes for service "{{ item }}"'
+      when: aws_ip_ranges_parser_services | length > 0
+
+    - name: 'Result: IPv4 ranges by region'
+      ansible.builtin.debug:
+        msg: '{{ aws_ip_ranges_parser_ipv4_result_by_region[item] | default([]) }}'
+      loop: '{{ aws_ip_ranges_parser_ipv4_result_regions
+                if aws_ip_ranges_parser_regions == "all"
+                else aws_ip_ranges_parser_regions | split(",")
+             }}'
+      loop_control:
+        label: 'IPv4 prefixes for region "{{ item }}"'
+      when: aws_ip_ranges_parser_regions | length > 0
+
+  when: aws_ip_ranges_parser_ipv4_enabled | bool and aws_ip_ranges_parser_print_results | bool

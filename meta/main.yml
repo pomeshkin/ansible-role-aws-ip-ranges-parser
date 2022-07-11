@@ -1,0 +1,23 @@
+galaxy_info:
+  author: 'Alexandr Pomeshkin'
+  description: 'The role parses the ip-ranges.json file provided by AWS and creates variables with the parsed IP prefixes for use by other roles'
+  company: ''
+  role_name: 'aws_ip_ranges_parser'
+  license: 'BSD'
+
+  min_ansible_version: 2.6
+
+  platforms:
+    - name: 'Ubuntu'
+      versions:
+        - 18
+        - 20
+        - 22
+
+  galaxy_tags:
+    - 'aws'
+    - 'iprange'
+    - 'ip'
+    - 'parsing'
+
+dependencies: []
